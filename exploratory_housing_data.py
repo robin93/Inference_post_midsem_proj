@@ -15,6 +15,9 @@
 12 B        1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town 
 13 LSTAT    percentage lower status of the population 
 14 MEDV     Median value of owner-occupied homes in $1000
+
+Plotting: http://pandas.pydata.org/pandas-docs/version/0.15.0/visualization.html#histograms
+
 """
 
 #import the data
@@ -31,6 +34,22 @@ raw_data = pd.read_excel(os.path.join(cwd,'Boston_Housing Data.xls'),'Data')  #x
 
 #print 'Are there any null values in the data set :',raw_data.isnull().values.any()
 
+def confidence_interval(standard_deviation,observations,confidence):
+	confidence_fraction = (1 - (100-float(confidence))/200)
+	if observations > 30:
+		total_length_of_confidence_interval = (standard_deviation*2*norm.ppf(confidence_fraction)/np.sqrt(observations))
+	else:
+		total_length_of_confidence_interval = (standard_deviation*2*t.ppf(confidence_fraction,observations)/np.sqrt(observations))
+	return total_length_of_confidence_interval
+
+
+print pd.unique(raw_data['RAD'])
+
+def histograms(input_list):
+	for choice in input_list:
+		if choice == 9:
+			raw_data['RAD'].plot(kind = 'hist')
+		plt.show()
 
 def scatter_plots(input_list):
 	for element in input_list:
@@ -82,14 +101,25 @@ def distribution_of_medv():
 	print "Standard deviation of the Median Housing prices",float(raw_data[['MEDV']].std(axis=0))
 
 def mean_plots(input_list):
-	for element in input_list:
-		if element == 13:
+	for choice in input_list:
+		if choice == 13:
 			x_values = [5,15,30]
 			mean1,mean2,mean3 = (raw_data[(raw_data.LSTAT>0)&(raw_data.LSTAT<10)])['MEDV'].mean(axis =0),(raw_data[(raw_data.LSTAT>10)&(raw_data.LSTAT<20)])['MEDV'].mean(axis =0),(raw_data[(raw_data.LSTAT>20)])['MEDV'].mean(axis =0)
 			std1,std2,std3 = (raw_data[(raw_data.LSTAT>0)&(raw_data.LSTAT<10)])['MEDV'].std(axis =0),(raw_data[(raw_data.LSTAT>10)&(raw_data.LSTAT<20)])['MEDV'].std(axis =0),(raw_data[(raw_data.LSTAT>20)])['MEDV'].std(axis =0)
-			plt.errorbar(x_values,[mean1,mean2,mean3],[std1,std2,std3]);plt.xlim(0,40);plt.grid(True)
-			plt.xlabel('LSTAT values');plt.ylabel('MEDV mean and standard deviation');plt.title('Mean plot of MEDV vs LSTAT values')
-			plt.show()
+			n1,n2,n3 = len(raw_data[(raw_data.LSTAT>0)&(raw_data.LSTAT<10)]),len(raw_data[(raw_data.LSTAT>10)&(raw_data.LSTAT<20)]),len(raw_data[(raw_data.LSTAT>20)])
+			cint1,cint2,cint3 = confidence_interval(std1,n1,95),confidence_interval(std2,n2,95),confidence_interval(std3,n3,95)
+			plt.errorbar(x_values,[mean1,mean2,mean3],[cint1,cint2,cint3]);plt.xlim(0,40);plt.grid(True)
+			plt.xlabel('LSTAT values');plt.ylabel('Confidence interval of Mean House prices');plt.title('Confidence interval of mean values of house prices by LSTAT sub ranges')
+		elif choice ==10:
+			x_values = [300,700]
+			sub_data1,sub_data2 = raw_data[(raw_data.TAX>100)&(raw_data.TAX<500)],raw_data[(raw_data.TAX>600)&(raw_data.TAX<800)]
+			mean1,mean2 = sub_data1['MEDV'].mean(axis =0),sub_data2['MEDV'].mean(axis =0)
+			std1,std2 = sub_data1['MEDV'].std(axis =0),sub_data2['MEDV'].std(axis =0)
+			n1,n2 = len(sub_data1),len(sub_data2)
+			cint1,cint2 = confidence_interval(std1,n1,95),confidence_interval(std2,n2,95)
+			plt.errorbar(x_values,[mean1,mean2],[cint1,cint2]);plt.xlim(100,800);plt.grid(True)
+			plt.xlabel('Full property tax rate');plt.ylabel('Confidence interval of Mean House prices');plt.title('Confidence interval of mean values of house prices by TAX sub ranges')
+		plt.show()
 
 def hypothesis_test(input_list):
 	for element in input_list:
@@ -104,10 +134,11 @@ def hypothesis_test(input_list):
 
 
 #############Execution################
-#scatter_plots([13]) 
+histograms([9])
+#scatter_plots([10]) 
 #distribution_of_medv()
-mean_plots([13])
-hypothesis_test([13])
+#mean_plots([10])
+#hypothesis_test([13])
 
 
 
